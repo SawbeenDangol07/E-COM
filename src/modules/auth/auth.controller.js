@@ -180,3 +180,7 @@ class AuthController {
     }
   }
 }
+
+let authCtrl = new AuthController();
+
+module.exports = authCtrl;
