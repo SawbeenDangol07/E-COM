@@ -6,7 +6,7 @@ class BrandController {
       const data = await brandService.transformToBrandCreate(req);
       const brand = await brandService.save(data);
       res.json({
-        data: data,
+        data: brand,
         message: "Brand created successfully",
         status: "OK",
       });
