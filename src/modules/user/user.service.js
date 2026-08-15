@@ -19,6 +19,19 @@ class userService {
     }
   }
 
+  async updateSingleRowByFilter(filter, data) {
+    try {
+      const update = await UserModel.findOneAndUpdate(
+        filter,
+        { $set: data },
+        { new: true },
+      );
+      return update;
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
   getPublicProfileOfUser(user) {
     const userObj = {
       _id: user._id,

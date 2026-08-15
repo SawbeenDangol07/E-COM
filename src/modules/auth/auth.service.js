@@ -94,6 +94,80 @@ class AuthService {
       throw exception;
     }
   }
+
+  async ReAccActivationEmail(user) {
+    try {
+      const displayName = (user.name && user.name.trim()) || "User";
+      const expiry = user.expiryTime
+        ? new Date(user.expiryTime).toLocaleString()
+        : "24 hours";
+      const activationUrl = `http://localhost:5173/activate/${user.token}`;
+
+      return await EmailService.sendEmail({
+        to: user.email,
+        subject: "Re-activate Your Account - New Link",
+        message: `<!doctype html>
+        <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+      </head>
+      <body style="margin:0;padding:0;background:#f0f2f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;margin:20px auto;background:#ffffff;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+      <tr>
+        <td style="padding:25px;text-align:center;border-bottom:1px solid #e5e5e5;background:#f9f9f9;border-top-left-radius:10px;border-top-right-radius:10px;">
+          <h1 style="margin:0;color:#333333;font-size:24px;font-weight:700;">Re-activate your account</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:25px;color:#555555;">
+          <p style="margin:0 0 15px 0;font-size:16px;line-height:1.6;color:#444444;">Hello ${displayName},</p>
+          <p style="margin:0 0 20px 0;font-size:16px;line-height:1.6;color:#444444;">
+        You recently requested a new activation link for your account associated with ${user.email}. To complete your account activation, please click the button below. This new link will expire on <strong>${expiry}</strong>.
+          </p>
+
+          <div style="text-align:center;margin:25px 0;">
+        <a href="${activationUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#007bff;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;box-shadow:0 2px 5px rgba(0,123,255,0.2);">
+          Re-activate Account
+        </a>
+          </div>
+
+          <p style="margin:0 0 15px 0;font-size:14px;color:#777777;">
+        If the button above does not work, copy and paste the following link into your browser:
+          </p>
+          <p style="word-break:break-all;margin:0 0 20px 0;font-size:14px;color:#333333;">
+        <a href="${activationUrl}" target="_blank" rel="noopener" style="color:#007bff;text-decoration:underline;">
+          ${activationUrl}
+        </a>
+          </p>
+
+          <p style="margin:0 0 20px 0;font-size:14px;color:#777777;">
+        Please note: this activation link is valid until <strong>${expiry}</strong>.
+          </p>
+
+          <p style="margin:0;font-size:16px;color:#444444;">
+        If you did not request this re-activation or need assistance, please contact our support team.
+          </p>
+
+          <p style="margin:25px 0 0 0;font-size:15px;color:#555555;">
+        Best regards,<br/>
+        The Platform Team
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:18px 25px;background:#f9f9f9;border-top:1px solid #e5e5e5;text-align:center;font-size:13px;color:#999999;border-bottom-left-radius:10px;border-bottom-right-radius:10px;">
+          This email was sent to ${user.email}. If you did not request this, please ignore it.
+        </td>
+      </tr>
+        </table>
+      </body>
+        </html>`,
+      });
+    } catch (exception) {
+      throw exception;
+    }
+  }
 }
 
 module.exports = new AuthService();
