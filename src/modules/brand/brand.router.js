@@ -12,5 +12,12 @@ BrandRouter.post(
   bodyValidator(BrandDTO),
   BrandCtrl.create,
 );
+BrandRouter.put(
+  "/",
+  checkLogin(["seller"]),
+  uploader().single("logo"),
+  bodyValidator(BrandDTO),
+  BrandCtrl.update,
+);
 
 module.exports = BrandRouter;
