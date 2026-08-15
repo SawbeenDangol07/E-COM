@@ -170,6 +170,11 @@ class AuthController {
   //get function for logged in user
   async getLoggedInUser(req, res, next) {
     try {
+      res.json({
+        data: req.loggedInUser,
+        message: "Your Profile",
+        status: "OK",
+      });
     } catch (exception) {
       next(exception);
     }
