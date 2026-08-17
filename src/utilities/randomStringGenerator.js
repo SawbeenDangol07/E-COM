@@ -3,10 +3,10 @@ const generateRandomString = (len = 100) => {
     "0987654321abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   const charslen = chars.length;
-  const random = "";
+  let random = "";
 
   for (let i = 0; i < len; i++) {
-    const posn = Math.ceil(Math.random() * charslen - 1);
+    const posn = Math.floor(Math.random() * charslen);
     random += chars[posn];
   }
 

@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const cloudinaryService = require("../../services/cloudinary.service");
+const EmailService = require("../../services/mailer.service");
 const generateRandomString = require("../../utilities/randomStringGenerator");
 
 class AuthService {
@@ -15,6 +16,7 @@ class AuthService {
       }
       data.token = generateRandomString();
       data.expiryTime = new Date(Date.now() + 86400000);
+
       return data;
     } catch (exception) {
       throw exception;

@@ -8,24 +8,29 @@ const uploader = () => {
       if (!fs.existsSync(path)) {
         fs.mkdirSync(path, { recursive: true });
       }
+      cb(null, path);
     },
 
     filename: (req, file, cb) => {
-      const filename = Date.now() + " " + file.originalname;
+      const filename = Date.now() + "-" + file.originalname;
       cb(null, filename);
     },
   });
 
   const filefilter = (req, file, cb) => {
-    const ext = file.originalname.split(".").pop();
-    if (("jpg", "jpeg", "png", "svg", "gif", "webp")) {
-      cb(false, true);
+    const ext = file.originalname.split(".").pop().toLowerCase();
+    const allowedExts = ["jpg", "jpeg", "png", "svg", "gif", "webp"];
+    if (allowedExts.includes(ext)) {
+      cb(null, true);
     } else {
-      cb({
-        code: 422,
-        message: "Format not supported",
-        status: "FILE_UPLOAD_ERR",
-      });
+      cb(
+        {
+          code: 422,
+          message: "Format not supported",
+          status: "FILE_UPLOAD_ERR",
+        },
+        false,
+      );
     }
   };
 

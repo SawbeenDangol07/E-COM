@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { Status } = require("../../config/constant");
 
 const BrandSchema = new mongoose.Schema(
   {

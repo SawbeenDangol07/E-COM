@@ -10,7 +10,8 @@ class AuthController {
   //register function for registering user
   async registerFunction(req, res, next) {
     try {
-      const data = authService.transformForUser(req);
+      const data = await authService.transformForUser(req);
+
       const user = await userService.storeUser(data);
       let meta = {};
       if (AppConfig.environment === "local") {
@@ -157,7 +158,7 @@ class AuthController {
         expiresIn: "10d",
       });
 
-      req.json({
+      res.json({
         data: authToken,
         message: "You're loggedIn",
         status: "OK",

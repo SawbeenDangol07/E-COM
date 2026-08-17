@@ -21,19 +21,21 @@ const bodyValidator = (schema) => {
     } catch (exception) {
       let messageBag = {};
       if (exception instanceof joi.ValidationError) {
-        exception.details.map((error) => {
-          messageBag[error.path.pop()] = error.message;
+        exception.details.forEach((error) => {
+          messageBag[error.path[0]] = error.message;
+        });
+        return next({
+          code: 400,
+          message: "VALIDATION_FAILED",
+          status: "VALIDATION_ERR",
+          detail: messageBag,
         });
       }
 
-      next({
-        code: 400,
-        message: "VALIDATION_FAILED",
-        status: "VALIDATION_ERR",
-        error: messageBag,
-      });
+      next(exception);
     }
   };
 };
 
 module.exports = bodyValidator;
+

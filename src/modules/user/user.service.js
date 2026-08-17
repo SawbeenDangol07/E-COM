@@ -33,6 +33,7 @@ class userService {
   }
 
   getPublicProfileOfUser(user) {
+    if (!user) return null;
     const userObj = {
       _id: user._id,
       name: user.name,
@@ -43,6 +44,7 @@ class userService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+    return userObj;
   }
 }
 

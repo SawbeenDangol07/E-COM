@@ -7,14 +7,14 @@ class CloudinaryService {
     cloudinary.config({
       cloud_name: CloudinaryConfig.className,
       api_key: CloudinaryConfig.apiKey,
-      api_secret: cloudinary.api_secret,
+      api_secret: CloudinaryConfig.apiSecrete,
     });
   }
 
   async singlefileUpload(filepath, dir = "/") {
     try {
       const response = await cloudinary.uploader.upload(filepath, {
-        folder: "/api-55" + dir,
+        folder: "api-55" + dir,
       });
       fs.unlinkSync(filepath);
       return {
@@ -26,6 +26,7 @@ class CloudinaryService {
         code: 500,
         message: "Cloudinary file upload failed",
         status: "CLOUDINARY_FILE_UPLOAD_ERR",
+        detail: exception.message || null,
       };
     }
   }

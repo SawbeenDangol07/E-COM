@@ -6,17 +6,19 @@ const LoginDTO = joi.object({
   password: joi.string().min(8).max(25).required(),
 });
 
-const password = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[\W@-_]).{8,25}^/;
+const password = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[\W_]).{8,25}$/;
 
 const RegisterDTO = joi.object({
-  name: joi.string().min(5).max(20).required(),
+  name: joi.string().min(2).max(50).required(),
   email: joi.string().email().required(),
   password: joi.string().regex(password).required(),
-  confirmPassword: joi.ref("password"),
-  imaage: joi.string().allow(null, "").optional().default(null),
+  confirmPassword: joi.string().valid(joi.ref("password")).required().messages({
+    "any.only": "Confirm password does not match password",
+  }),
+  image: joi.string().allow(null, "").optional().default(null),
   role: joi
     .string()
-    .regex(/^(customer|seller)^/)
+    .valid(...Object.values(UserRoles))
     .default(UserRoles.CUSTOMER),
 });
 
