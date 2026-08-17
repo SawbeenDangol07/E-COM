@@ -12,6 +12,7 @@ BrandRouter.post(
   bodyValidator(BrandDTO),
   BrandCtrl.create,
 );
+
 BrandRouter.put(
   "/",
   checkLogin(["seller"]),
@@ -19,5 +20,11 @@ BrandRouter.put(
   bodyValidator(BrandDTO),
   BrandCtrl.update,
 );
+
+BrandRouter.get("/", checkLogin(), BrandCtrl.listAll);
+
+BrandRouter.get("/:brandId", checkLogin(), BrandCtrl.getDetail);
+
+BrandRouter.delete("/:brandId", checkLogin(["seller"]), BrandCtrl.delete);
 
 module.exports = BrandRouter;
