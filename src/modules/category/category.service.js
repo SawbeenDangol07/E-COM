@@ -1,135 +1,192 @@
 const slugify = require("slugify");
-const cloudinaryService = require("../../services/cloudinary.service");
+const cloudinarySvc = require("../../services/cloudinary.service");
 const CategoryModel = require("./category.model");
+const { UserRoles } = require("../../config/constant");
 
 class CategoryService {
-  async transformToCategoryCreate(req) {
+  async transformToCategoryData(req) {
     try {
       const data = req.body;
       data.slug = slugify(data.name, {
         lower: true,
-        trim: true,
-        strict: true,
-        remove: /[*+.()'"!:@]/g,
       });
       if (req.file) {
-        data.logo = await cloudinaryService.singlefileUpload(
+        data.image = await cloudinarySvc.singleFileUpload(
           req.file.path,
-          "/Category",
+          "category",
         );
       }
 
-      data.createBy = req.loggedInUser._id;
+      if (!data.parent || data.parent === "" || data.parent === "null") {
+        data.parent = null;
+      }
+
+      if (!data.brands || data.brands === "" || data.brands === "null") {
+        data.brands = null;
+      }
+      data.createdBy = req.loggedInUser._id;
+
       return data;
     } catch (exception) {
       throw exception;
     }
   }
 
-  async save(data) {
+  async transformToCategoryUpdateData(req, oldCategory) {
     try {
-      const Category = new CategoryModel(data);
-      return await Category.save();
+      const data = req.body;
+
+      if (req.file) {
+        data.image = await cloudinarySvc.singleFileUpload(
+          req.file.path,
+          "category",
+        );
+      } else {
+        data.image = oldCategory.image;
+      }
+
+      if (!data.parent || data.parent === "" || data.parent === "null") {
+        data.parent = null;
+      }
+
+      if (!data.brands || data.brands === "" || data.brands === "null") {
+        data.brands = null;
+      }
+      data.updatedBy = req.loggedInUser._id;
+
+      return data;
     } catch (exception) {
       throw exception;
     }
+  }
+
+  async storeCategory(data) {
+    try {
+      let category = new CategoryModel(data);
+      category = await category.save();
+      return await this.getSingleRowByFilter({ _id: category._id });
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  async listAllCategoriesByFilter(filter) {
+    try {
+      const data = await CategoryModel.find(filter)
+        .populate("parent", [
+          "_id",
+          "name",
+          "slug",
+          "image",
+          "parent",
+          "brands",
+          "status",
+        ])
+        .populate("brands", ["_id", "name", "slug", "image", "status"])
+        .populate("createdBy", [
+          "_id",
+          "name",
+          "role",
+          "image",
+          "status",
+          "email",
+        ])
+        .populate("updatedBy", [
+          "_id",
+          "name",
+          "role",
+          "image",
+          "status",
+          "email",
+        ]);
+      return data;
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  async validateCategoryDetail(id, loggedInUser) {
+    let filter = {
+      _id: id,
+    };
+
+    if (loggedInUser.role !== UserRoles.ADMIN) {
+      filter = {
+        ...filter,
+        createdBy: loggedInUser._id,
+      };
+    }
+
+    const categoryDetail = await this.getSingleRowByFilter(filter);
+    if (!categoryDetail) {
+      throw {
+        code: 404,
+        message: "Category Detail not found",
+        status: "CATEGORY_NOT_FOUND",
+      };
+    }
+    return categoryDetail;
   }
 
   async getSingleRowByFilter(filter) {
     try {
       const data = await CategoryModel.findOne(filter)
+        .populate("parent", [
+          "_id",
+          "name",
+          "slug",
+          "image",
+          "parent",
+          "brands",
+          "status",
+        ])
+        .populate("brands", [
+          "_id",
+          "name",
+          "slug",
+          "image",
+          "parent",
+          "brands",
+          "status",
+        ])
         .populate("createdBy", [
           "_id",
           "name",
-          "email",
           "role",
           "image",
           "status",
+          "email",
         ])
         .populate("updatedBy", [
           "_id",
           "name",
-          "email",
           "role",
           "image",
           "status",
+          "email",
         ]);
-
       return data;
     } catch (exception) {
       throw exception;
     }
   }
 
-  async transformToCategoryUpdate(req, Category) {
+  async updateCategory(data, filter) {
     try {
-      const data = req.body;
-      if (req.file) {
-        data.logo = await cloudinaryService.singlefileUpload(
-          req.file.path,
-          "/Category",
-        );
-      } else {
-        data.logo = Category.logo;
-      }
-      data.updatedBy = req.loggedInUser._id;
-      return data;
-    } catch (exception) {
-      throw exception;
-    }
-  }
-
-  async updateSingleRowByFilter(filter, data) {
-    try {
-      const update = await CategoryModel.findOneAndUpdate(
+      const updatedData = await CategoryModel.findOneAndUpdate(
+        filter,
         { $set: data },
         { new: true },
       );
-
-      return update;
+      return updatedData;
     } catch (exception) {
       throw exception;
     }
   }
 
-  async getAllRowsByFilter(filter, config = { page: 1, limit: 20 }) {
+  async deleteDataByFilter(filter) {
     try {
-      const page = config.page || 1;
-      const limit = config.limit || 20;
-      const skip = (page - 1) * limit;
-      const data = await CategoryModel.find(filter)
-        .populate("createdBy", [
-          "_id",
-          "name",
-          "email",
-          "role",
-          "image",
-          "status",
-        ])
-        .populate("updatedBy", [
-          "_id",
-          "name",
-          "email",
-          "role",
-          "image",
-          "status",
-        ])
-        .sort({ createdAt: "desc" })
-        .skip(skip)
-        .limit(limit);
-
-      const total = await CategoryModel.countDocuments(filter);
-
-      return { data, pagination: { page: page, limit: limit, total: total } };
-    } catch (exception) {
-      throw exception;
-    }
-  }
-
-  async deleteSinglerowByFilter(filter) {
-    try {
-      const del = await CategoryModel.findOneAndDelete(filter);
-      return del;
+      return await CategoryModel.findOneAndDelete(filter);
     } catch (exception) {
       throw exception;
     }

@@ -1,179 +1,125 @@
-const { UserRoles } = require("../../config/constant");
-const CategoryService = require("./category.service");
+const { UserRoles, Status } = require("../../config/constant");
+const productService = require("../product/product.service");
+const categoryService = require("./category.service");
 
 class CategoryController {
-  //Function to create Category
-  async create(req, res, next) {
+  async addCategory(req, res, next) {
     try {
-      const data = await CategoryService.transformToCategoryCreate(req);
-      const Category = await CategoryService.save(data);
+      const data = await categoryService.transformToCategoryData(req);
+      const category = await categoryService.storeCategory(data);
       res.json({
-        data: Category,
-        message: "Category created successfully",
-        status: "OK",
-      });
-    } catch (exception) {
-      next(expcetion);
-    }
-  }
-
-  //Functino to update Category
-  async update(req, res, next) {
-    try {
-      const loggedInUser = req.loggedInUser;
-      let filter = {
-        _id: req.params.CategoryId,
-      };
-
-      if (loggedInUser.role !== UserRoles.ADMIN) {
-        filter = {
-          ...filter,
-          createdBy: loggedInUser._id,
-        };
-      }
-
-      const Category = await CategoryService.getSingleRowByFilter(filter);
-
-      if (!Category) {
-        throw {
-          code: 404,
-          message: "Category not found",
-          status: "Category_NOT_FOUND_ERR",
-        };
-      }
-
-      const data = await CategoryService.transformToCategoryUpdate(
-        req,
-        Category,
-      );
-      const update = await CategoryService.updateSingleRowByFilter(
-        { _id: Category._id },
-        data,
-      );
-
-      res.json({
-        data: update,
-        message: "Updated successfully",
-        status: "OK",
+        data: category,
+        message: "Category Created successfully",
+        status: "CATEGORY_CREATED",
       });
     } catch (exception) {
       next(exception);
     }
   }
 
-  //Function to list All Category
-  async listAll(req, res, next) {
+  async getAllCategories(req, res, next) {
     try {
       let filter = {};
-      if (req.query.search) {
-        filter = {
-          $or: [{ name: new RegExp(req.query.search, "i") }],
-        };
-      }
-
-      if (req.query.status) {
+      if (req.loggedInUser.role !== UserRoles.ADMIN) {
         filter = {
           ...filter,
-          status: req.query.status,
+          createdBy: req.loggedInUser._id,
         };
       }
-
-      const config = {
-        page: +req.query.page || 1,
-        limit: +req.query.limit || 20,
-      };
-
-      const { data, pagination } = await CategoryService.getAllRowsByFilter(
-        filter,
-        config,
-      );
-
+      const data = await categoryService.listAllCategoriesByFilter(filter);
       res.json({
         data: data,
-        message: "Category Listing",
-        status: "OK",
-        meta: {
-          pagination,
-        },
-      });
-    } catch (expcetion) {
-      next(exception);
-    }
-  }
-
-  //Function to get detail of Category
-  async getDetail(req, res, next) {
-    try {
-      const Category = await CategoryService.getSingleRowByFilter({
-        _id: req.params.CategoryId,
-      });
-
-      if (!Category) {
-        throw {
-          code: 401,
-          message: "Category not found",
-          status: "Category_NOT_FOUND_ERR",
-        };
-      }
-
-      res.json({
-        data: Category,
-        message: "Category detail",
-        status: "OK",
-      });
-    } catch (expcetion) {
-      next(exception);
-    }
-  }
-
-  //Function to delete Category
-  async delete(req, res, next) {
-    try {
-      const loggedInUser = req.loggedInUser;
-      let filter = {
-        _id: req.params.CategoryId,
-      };
-
-      if (loggedInUser.role !== UserRoles.ADMIN) {
-        filter = {
-          ...filter,
-          createdBy: loggedInUser._id,
-        };
-      }
-
-      const Category = await CategoryService.getSingleRowByFilter(filter);
-
-      if (!Category) {
-        throw {
-          code: 404,
-          message: "Category not found",
-          status: "Category_NOT_FOUND_ERR",
-        };
-      }
-
-      const del = await CategoryService.deleteSinglerowByFilter(filter);
-
-      res.json({
-        data: del,
-        message: "Category Delted Successfully",
-        status: "OK",
+        message: "Category Listing ",
+        status: "CATEGORY_LIST",
       });
     } catch (exception) {
       next(exception);
     }
   }
 
-  async getDetailBySlug(req, res, next) {
+  async getAllActiveCategories(req, res, next) {
     try {
-      const CategoryDetail = await CategoryService.getSingleRowByFilter({
+      let filter = { status: Status.ACTIVE };
+      const data = await categoryService.listAllCategoriesByFilter(filter);
+      res.json({
+        data: data,
+        message: "Category Listing ",
+        status: "CATEGORY_LIST",
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async getCategoryById(req, res, next) {
+    try {
+      const categoryDetail = await categoryService.validateCategoryDetail(
+        req.params.id,
+        req.loggedInUser,
+      );
+      res.json({
+        data: categoryDetail,
+        message: "Category Detail",
+        status: "CATEGORY_DETAIL",
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async updateCategoryData(req, res, next) {
+    try {
+      const categoryDetail = await categoryService.validateCategoryDetail(
+        req.params.id,
+        req.loggedInUser,
+      );
+      let updateData = await categoryService.transformToCategoryUpdateData(
+        req,
+        categoryDetail,
+      );
+      updateData = await categoryService.updateCategory(updateData, {
+        _id: categoryDetail._id,
+      });
+      res.json({
+        data: updateData,
+        message: "Category Updated ",
+        status: "CATEGORY_UPDATED",
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async deleteCategoryById(req, res, next) {
+    try {
+      const categoryDetail = await categoryService.validateCategoryDetail(
+        req.params.id,
+        req.loggedInUser,
+      );
+      const del = await categoryService.deleteDataByFilter({
+        _id: categoryDetail._id,
+      });
+      res.json({
+        data: del,
+        message: "Category deleted ",
+        status: "CATEGORY_DELETED",
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async getDetailsBySlug(req, res, next) {
+    try {
+      const categoryDetail = await categoryService.getSingleRowByFilter({
         slug: req.params.slug,
       });
 
-      if (!CategoryDetail) {
+      if (!categoryDetail) {
         res.json({
           code: 404,
-          message: "Category Not Found",
-          status: "Category_NOT_FOUND_ERR",
+          message: "Categoty Not Found",
+          status: "CATEGORY_NOT_FOUND_ERR",
         });
       }
 
@@ -181,7 +127,7 @@ class CategoryController {
       const limit = req.query.limit || 20;
       const { data, pagination } = await productService.getAllRowsByFilter(
         {
-          Category: CategoryDetail._id,
+          category: { $in: [categoryDetail._id] },
           status: Status.ACTIVE,
         },
         {
@@ -191,12 +137,12 @@ class CategoryController {
       );
       res.json({
         data: {
-          category: CategoryDetail,
+          category: categoryDetail,
           products: data,
         },
         message: "Category Detail",
         status: "ok",
-        meta: { pagination },
+        meta: pagination,
       });
     } catch (exception) {
       next(exception);
@@ -204,5 +150,5 @@ class CategoryController {
   }
 }
 
-let CategoryCtrl = new CategoryController();
-module.exports = CategoryCtrl;
+const categoryCtrl = new CategoryController();
+module.exports = categoryCtrl;

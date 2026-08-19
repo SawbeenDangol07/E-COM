@@ -1,34 +1,44 @@
-const CategoryRouter = require("express").Router();
-const checkLogin = require("../../middlewares/auth.middleware");
+const categoryRouter = require("express").Router();
+const { UserRoles } = require("../../config/constant");
+const { CategoryDataDTO } = require("./category.validator");
 const uploader = require("../../middlewares/uploader.middleware");
+const categoryCtrl = require("./category.controller");
+const checkLogin = require("../../middlewares/auth.middleware");
 const bodyValidator = require("../../middlewares/validation.middleware");
-const CategoryCtrl = require("./category.controller");
-const CategoryDTO = require("./category.validator");
 
-CategoryRouter.post(
+categoryRouter.get("/for-home", categoryCtrl.getAllActiveCategories);
+categoryRouter.get("/:slug/detail", categoryCtrl.getDetailsBySlug);
+
+// CRUD
+categoryRouter.post(
   "/",
-  checkLogin(["seller"]),
-  uploader().single("logo"),
-  bodyValidator(CategoryDTO),
-  CategoryCtrl.create,
+  checkLogin([UserRoles.ADMIN, UserRoles.SELLER]),
+  uploader().single("image"),
+  bodyValidator(CategoryDataDTO),
+  categoryCtrl.addCategory,
 );
 
-CategoryRouter.put(
+categoryRouter.get(
   "/",
-  checkLogin(["seller"]),
-  uploader().single("logo"),
-  bodyValidator(CategoryDTO),
-  CategoryCtrl.update,
+  checkLogin([UserRoles.ADMIN, UserRoles.SELLER]),
+  categoryCtrl.getAllCategories,
+);
+categoryRouter.get(
+  "/:id",
+  checkLogin([UserRoles.ADMIN, UserRoles.SELLER]),
+  categoryCtrl.getCategoryById,
+);
+categoryRouter.put(
+  "/:id",
+  checkLogin([UserRoles.ADMIN, UserRoles.SELLER]),
+  uploader().single("image"),
+  bodyValidator(CategoryDataDTO),
+  categoryCtrl.updateCategoryData,
+);
+categoryRouter.delete(
+  "/:id",
+  checkLogin([UserRoles.ADMIN, UserRoles.SELLER]),
+  categoryCtrl.deleteCategoryById,
 );
 
-CategoryRouter.get("/", checkLogin(), CategoryCtrl.listAll);
-
-CategoryRouter.get("/:CategoryId", checkLogin(), CategoryCtrl.getDetail);
-
-CategoryRouter.delete(
-  "/:CategoryId",
-  checkLogin(["seller"]),
-  CategoryCtrl.delete,
-);
-
-module.exports = CategoryRouter;
+module.exports = categoryRouter;

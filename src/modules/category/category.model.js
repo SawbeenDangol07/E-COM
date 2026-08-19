@@ -5,29 +5,42 @@ const CategorySchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      min: 2,
-      max: 100,
       required: true,
-      unique: false,
+      min: 3,
+      max: 50,
+      unique: true,
     },
     slug: {
       type: String,
-      unique: true,
       required: true,
+      unique: true,
     },
+    parent: {
+      type: mongoose.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
+
+    image: {
+      publicId: String,
+      secure_url: String,
+      thumbUrl: String,
+    },
+    brands: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Brand",
+        default: null,
+      },
+    ],
     status: {
       type: String,
       enum: Object.values(Status),
       default: Status.INACTIVE,
     },
-    logo: {
-      public_id: String,
-      url: String,
-    },
     createdBy: {
       type: mongoose.Types.ObjectId,
       ref: "User",
-      default: null,
     },
     updatedBy: {
       type: mongoose.Types.ObjectId,
@@ -35,13 +48,12 @@ const CategorySchema = new mongoose.Schema(
       default: null,
     },
   },
+
   {
     autoCreate: true,
     autoIndex: true,
     timestamps: true,
-  },
+  }
 );
 
-const CategoryModel = mongoose.model("Category", CategorySchema);
-
-module.exports = CategoryModel;
+module.exports = mongoose.model("Category", CategorySchema);
