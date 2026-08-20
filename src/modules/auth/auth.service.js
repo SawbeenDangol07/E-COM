@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const cloudinaryService = require("../../services/cloudinary.service");
 const EmailService = require("../../services/mailer.service");
 const generateRandomString = require("../../utilities/randomStringGenerator");
+const { AppConfig } = require("../../config/app.config");
 
 class AuthService {
   async transformForUser(req) {
@@ -29,7 +30,10 @@ class AuthService {
       const expiry = user.expiryTime
         ? new Date(user.expiryTime).toLocaleString()
         : "24 hours";
-      const activationUrl = `http://localhost:5173/activate/${user.token}`;
+      const frontendBase = AppConfig.feUrl
+        ? AppConfig.feUrl.replace(/\/+$/, "")
+        : "http://localhost:5173";
+      const activationUrl = `${frontendBase}/activate/${user.token}`;
 
       return await EmailService.sendEmail({
         to: user.email,
@@ -103,7 +107,10 @@ class AuthService {
       const expiry = user.expiryTime
         ? new Date(user.expiryTime).toLocaleString()
         : "24 hours";
-      const activationUrl = `http://localhost:5173/activate/${user.token}`;
+      const frontendBase = AppConfig.feUrl
+        ? AppConfig.feUrl.replace(/\/+$/, "")
+        : "http://localhost:5173";
+      const activationUrl = `${frontendBase}/activate/${user.token}`;
 
       return await EmailService.sendEmail({
         to: user.email,

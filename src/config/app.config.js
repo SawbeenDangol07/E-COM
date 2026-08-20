@@ -29,9 +29,9 @@ const SMTPConfig = {
 };
 
 const AppConfig = {
-  environment: process.env.ENVIROMENT,
-  feUrl: process.env.FRONTEND_URL,
-  beUrl: process.env.APP_URL,
+  environment: process.env.ENVIRONMENT || process.env.ENVIROMENT || "production",
+  feUrl: process.env.FRONTEND_URL || "http://localhost:5173",
+  beUrl: process.env.APP_URL || "https://e-com-backend-t6pw.onrender.com",
   jwtSecret: process.env.JWT_SECRET,
 };
 

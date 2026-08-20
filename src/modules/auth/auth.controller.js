@@ -14,18 +14,11 @@ class AuthController {
       const data = await authService.transformForUser(req);
 
       const user = await userService.storeUser(data);
-      let meta = {};
-      if (AppConfig.environment === "local") {
-        await authService.AccActivationEmail(user);
-      } else {
-        meta = {
-          activationLink: `${AppConfig.feUrl}/activate/${user.token}`,
-        };
-      }
+      await authService.AccActivationEmail(user);
 
       res.json({
         data: data,
-        message: "User registered successfully",
+        message: "User registered successfully. Please check your email to activate your account.",
         status: "OK",
       });
     } catch (exception) {
@@ -100,15 +93,7 @@ class AuthController {
         data,
       );
 
-      let meta = {};
-
-      if (AppConfig.environment === "local") {
-        await authService.ReAccActivationEmail(userDetail);
-      } else {
-        meta = {
-          activationLink: `${AppConfig.feUrl}/activate/${userDetail.token}`,
-        };
-      }
+      await authService.ReAccActivationEmail(userDetail);
 
       res.json({
         data: userService.getPublicProfileOfUser(user),
