@@ -82,7 +82,9 @@ class OrderService {
 
   async getAllRowsByFilter(filter, config = { page: 1, limit: 20 }) {
     try {
-      const skip = (config.page - 1) * config.page;
+      const page = +config.page || 1;
+      const limit = +config.limit || 20;
+      const skip = (page - 1) * limit;
       const order = await OrderModel.find(filter)
         .populate("detail.product", [
           "_id",
@@ -92,6 +94,13 @@ class OrderService {
           "discount",
           "afterDiscount",
           "images",
+          "seller",
+        ])
+        .populate("detail.seller", [
+          "_id",
+          "name",
+          "email",
+          "role",
         ])
         .populate("buyer", [
           "_id",
@@ -105,16 +114,16 @@ class OrderService {
         ])
         .sort({ createdAt: "desc" })
         .skip(skip)
-        .limit(config.limit);
+        .limit(limit);
       const total = await OrderModel.countDocuments(filter);
 
       return {
         data: order,
         pagination: {
-          page: +config.page,
-          limit: +config.limit,
+          page: page,
+          limit: limit,
           total: total,
-          noOfPages: Math.ceil(total / config.limit),
+          noOfPages: Math.ceil(total / limit) || 1,
         },
       };
     } catch (exception) {

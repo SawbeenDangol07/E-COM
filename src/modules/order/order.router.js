@@ -40,8 +40,14 @@ orderRouter.post(
 
 orderRouter.get(
   "/order-list",
-  checkLogin([UserRoles.ADMIN, UserRoles.CUSTOMER]),
+  checkLogin([UserRoles.ADMIN, UserRoles.SELLER, UserRoles.CUSTOMER]),
   orderController.getOrderLists,
+);
+
+orderRouter.patch(
+  "/status/:orderId",
+  checkLogin([UserRoles.ADMIN, UserRoles.SELLER]),
+  orderController.updateOrderStatus,
 );
 
 orderRouter.post(

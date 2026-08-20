@@ -277,7 +277,7 @@ class orderController {
       } else if (loggedInUser.role === UserRoles.SELLER) {
         filter = {
           ...filter,
-          "product.seller": loggedInUser._id,
+          "detail.seller": loggedInUser._id,
         };
       }
 
@@ -290,7 +290,7 @@ class orderController {
 
       const config = {
         page: +req.query.page || 1,
-        limit: +req.query.limit,
+        limit: +req.query.limit || 20,
       };
       const { data, pagination } = await orderService.getAllRowsByFilter(
         filter,
@@ -303,6 +303,43 @@ class orderController {
         meta: {
           pagination,
         },
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async updateOrderStatus(req, res, next) {
+    try {
+      const { orderId } = req.params;
+      const { status } = req.body;
+      const loggedInUser = req.loggedInUser;
+
+      let filter = {
+        $or: [{ orderId }, { _id: orderId }],
+      };
+
+      if (loggedInUser.role === UserRoles.SELLER) {
+        filter["detail.seller"] = loggedInUser._id;
+      }
+
+      const updated = await orderService.updatedSingleRowByFilter(filter, {
+        status: status,
+        updatedBy: loggedInUser._id,
+      });
+
+      if (!updated) {
+        throw {
+          code: 404,
+          message: "Order not found or unauthorized to update",
+          status: "ORDER_NOT_FOUND",
+        };
+      }
+
+      res.json({
+        data: updated,
+        message: `Order status updated to ${status}`,
+        status: "OK",
       });
     } catch (exception) {
       next(exception);
