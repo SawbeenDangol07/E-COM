@@ -3,6 +3,7 @@ const cloudinaryService = require("../../services/cloudinary.service");
 const EmailService = require("../../services/mailer.service");
 const generateRandomString = require("../../utilities/randomStringGenerator");
 const { AppConfig } = require("../../config/app.config");
+const { Status } = require("../../config/constant");
 
 class AuthService {
   async transformForUser(req) {
@@ -17,6 +18,7 @@ class AuthService {
       }
       data.token = generateRandomString();
       data.expiryTime = new Date(Date.now() + 86400000);
+      data.status = Status.ACTIVE; // Auto-activate user account
 
       return data;
     } catch (exception) {

@@ -14,11 +14,10 @@ class AuthController {
       const data = await authService.transformForUser(req);
 
       const user = await userService.storeUser(data);
-      await authService.AccActivationEmail(user);
 
       res.json({
-        data: data,
-        message: "User registered successfully. Please check your email to activate your account.",
+        data: userService.getPublicProfileOfUser(user),
+        message: "Account created successfully! You can now log in.",
         status: "OK",
       });
     } catch (exception) {
