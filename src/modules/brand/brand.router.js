@@ -14,14 +14,14 @@ BrandRouter.post(
 );
 
 BrandRouter.put(
-  "/",
+  "/:brandId",
   checkLogin(["seller"]),
   uploader().single("logo"),
   bodyValidator(BrandDTO),
   BrandCtrl.update,
 );
 
-BrandRouter.get("/", checkLogin(), BrandCtrl.listAll);
+BrandRouter.get("/", BrandCtrl.listAll);
 
 BrandRouter.get("/:brandId", checkLogin(), BrandCtrl.getDetail);
 

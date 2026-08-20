@@ -13,7 +13,7 @@ class BrandController {
         status: "OK",
       });
     } catch (exception) {
-      next(expcetion);
+      next(exception);
     }
   }
 
@@ -93,7 +93,7 @@ class BrandController {
           pagination,
         },
       });
-    } catch (expcetion) {
+    } catch (exception) {
       next(exception);
     }
   }
@@ -118,7 +118,7 @@ class BrandController {
         message: "Brand detail",
         status: "OK",
       });
-    } catch (expcetion) {
+    } catch (exception) {
       next(exception);
     }
   }

@@ -20,6 +20,8 @@ bannerRouter.get(
   bannerController.listAllBanners,
 );
 
+bannerRouter.get("/home", bannerController.listForHome);
+
 bannerRouter.get(
   "/:bannerId",
   checkLogin([UserRoles.ADMIN]),

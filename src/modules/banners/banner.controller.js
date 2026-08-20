@@ -59,6 +59,22 @@ class BannerController {
     }
   }
 
+  async listForHome(req, res, next) {
+    try {
+      const { data } = await bannerService.getAllRowsByFilter(
+        { status: "active" },
+        { page: 1, limit: 10 }
+      );
+      res.json({
+        data: data,
+        message: "Home Banners",
+        status: "OK",
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
   async getDetailById(req, res, next) {
     try {
       let filter = {

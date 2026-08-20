@@ -53,7 +53,7 @@ const CategorySchema = new mongoose.Schema(
     autoCreate: true,
     autoIndex: true,
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Category", CategorySchema);

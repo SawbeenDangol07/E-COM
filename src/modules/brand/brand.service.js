@@ -19,7 +19,7 @@ class BrandService {
         );
       }
 
-      data.createBy = req.loggedInUser._id;
+      data.createdBy = req.loggedInUser._id;
       return data;
     } catch (exception) {
       throw exception;
@@ -64,6 +64,14 @@ class BrandService {
   async transformToBrandUpdate(req, brand) {
     try {
       const data = req.body;
+      if (data.name) {
+        data.slug = slugify(data.name, {
+          lower: true,
+          trim: true,
+          strict: true,
+          remove: /[*+.()'"!:@]/g,
+        });
+      }
       if (req.file) {
         data.logo = await cloudinaryService.singlefileUpload(
           req.file.path,
@@ -82,6 +90,7 @@ class BrandService {
   async updateSingleRowByFilter(filter, data) {
     try {
       const update = await BrandModel.findOneAndUpdate(
+        filter,
         { $set: data },
         { new: true },
       );

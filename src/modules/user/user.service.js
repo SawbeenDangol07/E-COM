@@ -19,6 +19,28 @@ class userService {
     }
   }
 
+  async getAllRowsByFilter(filter, config = { page: 1, limit: 20 }) {
+    try {
+      const skip = (config.page - 1) * config.limit;
+      const data = await UserModel.find(filter)
+        .sort({ name: "asc" })
+        .limit(config.limit)
+        .skip(skip);
+      const total = await UserModel.countDocuments(filter);
+      return {
+        data: data.map((user) => this.getPublicProfileOfUser(user)),
+        pagination: {
+          page: +config.page,
+          limit: +config.limit,
+          total: +total,
+          totalNoOfPages: Math.ceil(total / config.limit),
+        },
+      };
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
   async updateSingleRowByFilter(filter, data) {
     try {
       const update = await UserModel.findOneAndUpdate(

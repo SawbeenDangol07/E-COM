@@ -3,6 +3,7 @@ const { Status } = require("../../config/constant");
 const generateRandomString = require("../../utilities/randomStringGenerator");
 const userService = require("../user/user.service");
 const authService = require("./auth.service");
+const cloudinaryService = require("../../services/cloudinary.service");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -89,17 +90,6 @@ class AuthController {
         };
       }
 
-      const today = Date.now();
-      const expiryTime = user.expiryTime;
-
-      if (today < expiryTime) {
-        throw {
-          code: 422,
-          message: "Token not expired",
-          status: "TOKEN_NOT_EXPIRED",
-        };
-      }
-
       const data = {
         token: generateRandomString(),
         expiryTime: new Date(Date.now() + 86400000),
@@ -122,7 +112,7 @@ class AuthController {
 
       res.json({
         data: userService.getPublicProfileOfUser(user),
-        message: "Account activated successfully",
+        message: "Activation email resent successfully",
         status: "OK",
       });
     } catch (exception) {
@@ -154,6 +144,16 @@ class AuthController {
         };
       }
 
+      if (userDetail.status !== Status.ACTIVE) {
+        throw {
+          code: 403,
+          message:
+            "User is not activated. Please check your email to activate your account before logging in.",
+          status: "USER_NOT_ACTIVATED",
+          data: userDetail.token,
+        };
+      }
+
       let authToken = jwt.sign({ sub: userDetail._id }, AppConfig.jwtSecret, {
         expiresIn: "10d",
       });
@@ -174,6 +174,48 @@ class AuthController {
       res.json({
         data: req.loggedInUser,
         message: "Your Profile",
+        status: "OK",
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  // Update profile and avatar for logged in user
+  async updateProfile(req, res, next) {
+    try {
+      const userId = req.loggedInUser._id;
+      const updateData = {};
+
+      if (req.body.name && req.body.name.trim()) {
+        updateData.name = req.body.name.trim();
+      }
+      if (req.body.phone) {
+        updateData.phone = req.body.phone;
+      }
+      if (req.body.address) {
+        updateData.address = req.body.address;
+      }
+      if (req.body.storeName) {
+        updateData.storeName = req.body.storeName;
+      }
+
+      if (req.file) {
+        const uploadedImg = await cloudinaryService.singlefileUpload(
+          req.file.path,
+          "/user",
+        );
+        updateData.image = uploadedImg;
+      }
+
+      const updatedUser = await userService.updateSingleRowByFilter(
+        { _id: userId },
+        updateData,
+      );
+
+      res.json({
+        data: userService.getPublicProfileOfUser(updatedUser),
+        message: "Profile updated successfully",
         status: "OK",
       });
     } catch (exception) {

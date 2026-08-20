@@ -32,7 +32,7 @@ class ProductService {
         let images = [];
         req.files.forEach((image) => {
           images.push(
-            cloudinaryService.singleFileUpload(image.path, "/products"),
+            cloudinaryService.singlefileUpload(image.path, "/products"),
           );
         });
 
@@ -81,9 +81,13 @@ class ProductService {
     }
   }
 
-  async getAllRowsByFilter(filter, config) {
+  async getAllRowsByFilter(filter, config = { page: 1, limit: 100 }) {
     try {
-      const skip = (config.page - 1) * config.limit;
+      const page = +config.page || 1;
+      const limit = +config.limit || 100;
+      const skip = (page - 1) * limit;
+      const sort = config.sort || { createdAt: "desc" };
+
       const data = await ProductModel.find(filter)
         .populate("category", [
           "_id",
@@ -128,17 +132,18 @@ class ProductService {
           "status",
           "email",
         ])
-        .sort({ createdAt: "desc" })
+        .sort(sort)
         .skip(skip)
-        .limit(config.limit);
+        .limit(limit);
 
       const count = await ProductModel.countDocuments(filter);
       return {
         data,
         pagination: {
-          page: config.page,
-          limit: config.limit,
+          page: page,
+          limit: limit,
           total: count,
+          totalNoOfPages: Math.ceil(count / limit),
         },
       };
     } catch (exception) {
@@ -203,8 +208,24 @@ class ProductService {
     try {
       const data = req.body;
 
-      data.price = data.price * 100;
-      data.afterDiscount = data.price - (data.price * data.discount) / 100;
+      if (data.name) {
+        data.slug = slugify(data.name, {
+          lower: true,
+          strict: true,
+          trim: true,
+          replace: /[*+~.()'"!:@]/g,
+        });
+      }
+
+      if (data.price !== undefined) {
+        data.price = data.price * 100;
+        const discount =
+          data.discount !== undefined ? data.discount : product.discount || 0;
+        data.afterDiscount = data.price - (data.price * discount) / 100;
+      } else if (data.discount !== undefined) {
+        data.afterDiscount =
+          product.price - (product.price * data.discount) / 100;
+      }
 
       if (!data.category || data.category === "null") {
         data.category = null;
@@ -223,7 +244,7 @@ class ProductService {
         let images = [];
         req.files.forEach((image) => {
           images.push(
-            cloudinaryService.singleFileUpload(image.path, "/products"),
+            cloudinaryService.singlefileUpload(image.path, "/products"),
           );
         });
 

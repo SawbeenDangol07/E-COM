@@ -3,13 +3,11 @@ const app = require("./src/config/express.config");
 
 const httpServer = http.createServer(app);
 
-const HOST = "localhost";
-const PORT = 9005;
-httpServer.listen(PORT, HOST, (err) => {
+const PORT = process.env.PORT || 9005;
+httpServer.listen(PORT, "0.0.0.0", (err) => {
   if (!err) {
-    console.log("server is connected to port: " + PORT);
-    console.log("Press ctrl+c to exit");
+    console.log(`Server is running on port: ${PORT}`);
   } else {
-    console.log("App connection error");
+    console.log("App connection error:", err);
   }
 });

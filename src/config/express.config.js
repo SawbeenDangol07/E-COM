@@ -1,10 +1,31 @@
 const express = require("express");
 const cors = require("cors");
 const router = require("./router.config");
+const { sqlInit } = require("./sequelize.config");
+const { default: helmet } = require("helmet");
+const { default: rateLimit } = require("express-rate-limit");
 
 require("./mongodb.config");
+sqlInit();
 
 const app = express();
+
+app.use(cors());
+app.use(helmet());
+
+const limit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 2000, // Generous limit for real-time app interactions and chat polling
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    code: 429,
+    message: "Too many requests, please try again in a few moments.",
+    status: "RATE_LIMIT_EXCEEDED",
+  },
+});
+
+app.use(limit);
 
 app.use(express.urlencoded({ limit: "2mb" }));
 app.use(express.json({ limit: "2mb" }));
@@ -39,12 +60,15 @@ app.use((error, req, res, next) => {
     };
   }
 
+  let data = error.data ?? null;
+
   // Ensure code is a valid HTTP status code between 100 and 599
   if (typeof code !== "number" || code < 100 || code >= 600) {
     code = 500;
   }
 
   res.status(code).json({
+    data: data,
     error: details,
     message: msg,
     status: status,

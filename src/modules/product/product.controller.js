@@ -1,6 +1,10 @@
+const mongoose = require("mongoose");
 const { UserRoles, Status } = require("../../config/constant");
 const productService = require("./product.service");
 const ProductService = require("./product.service");
+const CategoryModel = require("../category/category.model");
+const BrandModel = require("../brand/brand.model");
+
 class productController {
   async createProduct(req, res, next) {
     try {
@@ -28,8 +32,10 @@ class productController {
       if (req.query.search) {
         filter = {
           ...filter,
-          name: new RegExp(req.query.search, "i"),
-          description: new RegExp(req.query.search, "i"),
+          $or: [
+            { name: new RegExp(req.query.search, "i") },
+            { description: new RegExp(req.query.search, "i") },
+          ],
         };
       }
 
@@ -41,14 +47,14 @@ class productController {
       }
 
       const page = req.query.page || 1;
-      const limit = req.query.limit || 2;
+      const limit = req.query.limit || 50;
 
       const { data, pagination } = await ProductService.getAllRowsByFilter(
         filter,
         {
           page: page,
           limit: limit,
-        }
+        },
       );
       res.json({
         data: data,
@@ -82,7 +88,7 @@ class productController {
           category: { $in: product.category.map((row) => row._id) },
           status: Status.ACTIVE,
         },
-        { page: 1, limit: 8 }
+        { page: 1, limit: 8 },
       );
 
       res.json({
@@ -138,16 +144,12 @@ class productController {
         };
       }
 
-      const updateData = await productService.transformToProductForUpdate(
+      const data = await productService.transformToProductForUpdate(
         req,
-        product
+        product,
       );
 
-      const response = await productService.updateProductByFilter(
-        { _id: product._id },
-        updateData
-      );
-
+      const response = await productService.updateProductByFilter(filter, data);
       res.json({
         data: response,
         message: "Product updated successfully",
@@ -165,7 +167,6 @@ class productController {
       };
       if (req.loggedInUser.role !== UserRoles.ADMIN) {
         filter = {
-          ...filter,
           createdBy: req.loggedInUser._id,
         };
       }
@@ -180,7 +181,6 @@ class productController {
       }
 
       //delete operation
-
       const response = await productService.deleteSingleProductByFilter(filter);
       res.json({
         data: response,
@@ -196,31 +196,77 @@ class productController {
     try {
       let filter = { status: Status.ACTIVE };
 
-      if (req.query.search) {
-        filter = {
-          ...filter,
-          name: new RegExp(req.query.search, "i"),
-          description: new RegExp(req.query.search, "i"),
-        };
+      // Text search
+      if (req.query.search && req.query.search.trim()) {
+        filter.$or = [
+          { name: new RegExp(req.query.search.trim(), "i") },
+          { description: new RegExp(req.query.search.trim(), "i") },
+        ];
       }
 
-      // if (req.query.category) {
-      //   filter = {
-      //     ...filter,
-      //     category: { $in: [req.query.category] },
-      //   };
-      // }
+      // Category filter (support ID or slug)
+      if (req.query.category && req.query.category !== "all") {
+        if (mongoose.Types.ObjectId.isValid(req.query.category)) {
+          filter.category = {
+            $in: [new mongoose.Types.ObjectId(req.query.category)],
+          };
+        } else {
+          const categoryDoc = await CategoryModel.findOne({
+            slug: req.query.category,
+          });
+          if (categoryDoc) {
+            filter.category = { $in: [categoryDoc._id] };
+          }
+        }
+      }
 
-      const page = req.query.page || 1;
-      const limit = req.query.limit || 2;
+      // Brand filter (support ID or slug)
+      if (req.query.brand && req.query.brand !== "all") {
+        if (mongoose.Types.ObjectId.isValid(req.query.brand)) {
+          filter.brand = {
+            $in: [new mongoose.Types.ObjectId(req.query.brand)],
+          };
+        } else {
+          const brandDoc = await BrandModel.findOne({ slug: req.query.brand });
+          if (brandDoc) {
+            filter.brand = { $in: [brandDoc._id] };
+          }
+        }
+      }
+
+      // Price range filter
+      if (req.query.minPrice || req.query.maxPrice) {
+        filter.afterDiscount = {};
+        if (req.query.minPrice && !isNaN(+req.query.minPrice)) {
+          filter.afterDiscount.$gte = +req.query.minPrice * 100;
+        }
+        if (req.query.maxPrice && !isNaN(+req.query.maxPrice)) {
+          filter.afterDiscount.$lte = +req.query.maxPrice * 100;
+        }
+      }
+
+      // Sorting
+      let sort = { createdAt: "desc" };
+      if (req.query.sortBy === "price-asc") {
+        sort = { afterDiscount: "asc" };
+      } else if (req.query.sortBy === "price-desc") {
+        sort = { afterDiscount: "desc" };
+      } else if (req.query.sortBy === "discount") {
+        sort = { discount: "desc" };
+      }
+
+      const page = +req.query.page || 1;
+      const limit = +req.query.limit || 100;
 
       const { data, pagination } = await ProductService.getAllRowsByFilter(
         filter,
         {
-          page: page,
-          limit: limit,
-        }
+          page,
+          limit,
+          sort,
+        },
       );
+
       res.json({
         data: data,
         message: "Products fetched successfully",
@@ -232,5 +278,6 @@ class productController {
     }
   }
 }
+
 const productCtrl = new productController();
 module.exports = productCtrl;

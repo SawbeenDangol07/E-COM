@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { AppConfig } = require("../config/app.config");
 const userService = require("../modules/user/user.service");
-const { UserRoles } = require("../config/constant");
+const { UserRoles, Status } = require("../config/constant");
 
 const checkLogin = (role = null) => {
   return async (req, res, next) => {
@@ -9,7 +9,7 @@ const checkLogin = (role = null) => {
       let token = req.headers["authorization"] ?? null;
 
       if (!token) {
-        next({
+        return next({
           code: 401,
           message: "Missing access token",
           status: "MISSING_ACCESS_TOKEN_ERR",
@@ -24,10 +24,18 @@ const checkLogin = (role = null) => {
       });
 
       if (!userDetail) {
-        next({
+        return next({
           code: 403,
           message: "User doesn't exist",
           status: "USER_ALREADY_DELETED",
+        });
+      }
+
+      if (userDetail.status !== Status.ACTIVE) {
+        return next({
+          code: 403,
+          message: "User account is not activated",
+          status: "USER_NOT_ACTIVATED",
         });
       }
 

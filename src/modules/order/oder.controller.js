@@ -380,12 +380,22 @@ class orderController {
   async paymentSuccess(req, res, next) {
     try {
       const data = req.query;
+      console.log("Khalti payment callback:", data);
+
       const orderDetail = await orderService.getSingleRowByFilter({
         orderId: data.purchase_order_id,
       });
+
       if (!orderDetail) {
-        res.redirect(AppConfig.feUrl + "/?error=Order not found");
-      } else {
+        return res.redirect(`${AppConfig.feUrl}/orders?error=Order not found`);
+      }
+
+      // Check if status is actually completed from Khalti
+      const isCompleted =
+        (data.status && data.status.toLowerCase() === "completed") ||
+        (data.transaction_id && data.status !== "User canceled");
+
+      if (isCompleted && data.transaction_id) {
         await orderService.updatedSingleRowByFilter(
           {
             orderId: orderDetail.orderId,
@@ -393,8 +403,8 @@ class orderController {
           {
             transaction: [
               {
-                transactionCode: data.transaction_id,
-                amount: data.amount,
+                transactionCode: data.transaction_id || data.pidx,
+                amount: data.amount ? Number(data.amount) : orderDetail.total,
                 data: JSON.stringify(data),
               },
             ],
@@ -402,11 +412,19 @@ class orderController {
           },
         );
 
-        res.redirect(AppConfig.feUrl + "/payment?success=Payment success");
+        return res.redirect(
+          `${AppConfig.feUrl}/orders?success=Payment completed successfully via Khalti for order #${orderDetail.orderId}`
+        );
+      } else {
+        // Payment was NOT completed (user canceled, failed, or pending)
+        // Keep order in its current status ('new') and do NOT record any fake transaction
+        return res.redirect(
+          `${AppConfig.feUrl}/orders?warning=Payment was canceled or uncompleted. You can pay anytime from your orders dashboard.&orderId=${orderDetail.orderId}`
+        );
       }
     } catch (exception) {
-      console.log(exception);
-      res.redirect(AppConfig.feUrl + "/payment?error=Payment Failed");
+      console.log("Payment callback error:", exception);
+      res.redirect(`${AppConfig.feUrl}/orders?error=Payment verification error`);
     }
   }
 }

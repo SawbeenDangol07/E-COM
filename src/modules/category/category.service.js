@@ -9,9 +9,12 @@ class CategoryService {
       const data = req.body;
       data.slug = slugify(data.name, {
         lower: true,
+        trim: true,
+        strict: true,
+        remove: /[*+.()'"!:@]/g,
       });
       if (req.file) {
-        data.image = await cloudinarySvc.singleFileUpload(
+        data.image = await cloudinarySvc.singlefileUpload(
           req.file.path,
           "category",
         );
@@ -36,8 +39,17 @@ class CategoryService {
     try {
       const data = req.body;
 
+      if (data.name) {
+        data.slug = slugify(data.name, {
+          lower: true,
+          trim: true,
+          strict: true,
+          remove: /[*+.()'"!:@]/g,
+        });
+      }
+
       if (req.file) {
-        data.image = await cloudinarySvc.singleFileUpload(
+        data.image = await cloudinarySvc.singlefileUpload(
           req.file.path,
           "category",
         );

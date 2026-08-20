@@ -21,4 +21,11 @@ authRouter.post("/login", bodyValidator(LoginDTO), authCtrl.loginFunction);
 
 authRouter.get("/me", checkLogin(), authCtrl.getLoggedInUser);
 
+authRouter.patch(
+  "/update-profile",
+  checkLogin(),
+  uploader().single("image"),
+  authCtrl.updateProfile,
+);
+
 module.exports = authRouter;
