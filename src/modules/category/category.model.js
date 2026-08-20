@@ -22,7 +22,9 @@ const CategorySchema = new mongoose.Schema(
     },
 
     image: {
+      public_id: String,
       publicId: String,
+      url: String,
       secure_url: String,
       thumbUrl: String,
     },

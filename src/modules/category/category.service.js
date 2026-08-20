@@ -14,10 +14,17 @@ class CategoryService {
         remove: /[*+.()'"!:@]/g,
       });
       if (req.file) {
-        data.image = await cloudinarySvc.singlefileUpload(
+        const uploadRes = await cloudinarySvc.singlefileUpload(
           req.file.path,
           "category",
         );
+        data.image = {
+          public_id: uploadRes.public_id,
+          publicId: uploadRes.public_id,
+          url: uploadRes.url,
+          secure_url: uploadRes.url,
+          thumbUrl: uploadRes.url,
+        };
       }
 
       if (!data.parent || data.parent === "" || data.parent === "null") {
@@ -49,10 +56,17 @@ class CategoryService {
       }
 
       if (req.file) {
-        data.image = await cloudinarySvc.singlefileUpload(
+        const uploadRes = await cloudinarySvc.singlefileUpload(
           req.file.path,
           "category",
         );
+        data.image = {
+          public_id: uploadRes.public_id,
+          publicId: uploadRes.public_id,
+          url: uploadRes.url,
+          secure_url: uploadRes.url,
+          thumbUrl: uploadRes.url,
+        };
       } else {
         data.image = oldCategory.image;
       }
