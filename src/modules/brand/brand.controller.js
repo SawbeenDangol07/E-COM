@@ -1,5 +1,7 @@
-const { UserRoles } = require("../../config/constant");
+const mongoose = require("mongoose");
+const { UserRoles, Status } = require("../../config/constant");
 const brandService = require("./brand.service");
+const productService = require("../product/product.service");
 
 class BrandController {
   //Function to create Brand
@@ -162,20 +164,34 @@ class BrandController {
 
   async getDetailBySlug(req, res, next) {
     try {
-      const brandDetail = await brandService.getSingleRowByFilter({
-        slug: req.params.slug,
+      const slug = req.params.slug;
+      let brandDetail = await brandService.getSingleRowByFilter({
+        slug: slug,
       });
 
       if (!brandDetail) {
-        res.json({
+        brandDetail = await brandService.getSingleRowByFilter({
+          name: new RegExp(`^${slug}$`, "i"),
+        });
+      }
+
+      if (!brandDetail && mongoose.Types.ObjectId.isValid(slug)) {
+        brandDetail = await brandService.getSingleRowByFilter({
+          _id: slug,
+        });
+      }
+
+      if (!brandDetail) {
+        return res.status(404).json({
+          data: null,
           code: 404,
-          message: "brand Not Found",
+          message: "Brand Not Found",
           status: "BRAND_NOT_FOUND_ERR",
         });
       }
 
-      const page = req.query.page || 1;
-      const limit = req.query.limit || 20;
+      const page = +req.query.page || 1;
+      const limit = +req.query.limit || 50;
       const { data, pagination } = await productService.getAllRowsByFilter(
         {
           brand: brandDetail._id,
@@ -188,11 +204,12 @@ class BrandController {
       );
       res.json({
         data: {
+          brand: brandDetail,
           category: brandDetail,
           products: data,
         },
         message: "Brand Detail",
-        status: "ok",
+        status: "OK",
         meta: { pagination },
       });
     } catch (exception) {

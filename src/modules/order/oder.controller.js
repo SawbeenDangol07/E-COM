@@ -254,7 +254,7 @@ class orderController {
       //
       res.json({
         data: cart,
-        message: "Your order has been placed successfully",
+        message: "Checkout initialized",
         status: "OK",
       });
     } catch (exception) {
@@ -374,42 +374,77 @@ class orderController {
       let response;
 
       if (method === "khalti") {
-        let body = {
-          purchase_order_id: orderDetail.orderId,
-          amount: orderDetail.total,
-          return_url: AppConfig.beUrl + "/api/v1/order/payment-success",
+        await orderService.updatedSingleRowByFilter(
+          { orderId: orderDetail.orderId },
+          { paymentMethod: "khalti" }
+        );
+
+        // Khalti amount must be in paisa (minimum 1000 paisa / Rs 10, positive integer)
+        const amountInPaisa = Math.max(1000, Math.round(orderDetail.total));
+
+        // Khalti v2 ePayment payload
+        const body = {
+          return_url: `${AppConfig.beUrl}/api/v1/order/payment-success`,
           website_url: AppConfig.feUrl,
-          purchase_order_name: "Ecommerce purchase",
+          amount: amountInPaisa,
+          purchase_order_id: orderDetail.orderId,
+          purchase_order_name: `Order #${orderDetail.orderId}`,
+          customer_info: {
+            name: loggedInUser.name || "Customer",
+            email: loggedInUser.email || "customer@example.com",
+            phone: loggedInUser.phone || "9800000000",
+          },
         };
 
-        const khaltiResponse = await fetch(
-          KhaltiConfig.url + "epayment/initiate/",
-          {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-              Authorization: "Key " + KhaltiConfig.key,
-              "Content-Type": "application/json",
-            },
+        const baseUrl = KhaltiConfig.url.trim().replace(/\/+$/, "");
+        const khaltiUrl = `${baseUrl}/epayment/initiate/`;
+        const khaltiKey = KhaltiConfig.key.trim().replace(/^Key\s+/i, "");
+
+        console.log("Calling Khalti API:", khaltiUrl);
+        console.log("Khalti Payload:", body);
+
+        const khaltiResponse = await fetch(khaltiUrl, {
+          method: "POST",
+          body: JSON.stringify(body),
+          headers: {
+            Authorization: `Key ${khaltiKey}`,
+            "Content-Type": "application/json",
           },
-        );
+        });
+
         response = await khaltiResponse.json();
+        console.log("Khalti API Response Status:", khaltiResponse.status, "Body:", response);
+
+        if (!khaltiResponse.ok || !response.payment_url) {
+          const errMsg =
+            response.detail ||
+            response.message ||
+            (typeof response === "object" ? JSON.stringify(response) : "Khalti gateway initialization failed");
+          throw {
+            code: 400,
+            message: errMsg,
+            status: "KHALTI_INIT_FAILED",
+            data: response,
+          };
+        }
       } else {
         response = await orderService.updatedSingleRowByFilter(
           {
             orderId: orderDetail.orderId,
           },
           {
+            paymentMethod: "cod",
             status: "processing",
           },
         );
       }
       res.json({
         data: response,
-        message: "payment Initiated",
+        message: "Payment initiated",
         status: "OK",
       });
     } catch (exception) {
+      console.error("Initiate Payment Error:", exception);
       next(exception);
     }
   }
@@ -438,6 +473,7 @@ class orderController {
             orderId: orderDetail.orderId,
           },
           {
+            paymentMethod: "khalti",
             transaction: [
               {
                 transactionCode: data.transaction_id || data.pidx,
@@ -450,13 +486,13 @@ class orderController {
         );
 
         return res.redirect(
-          `${AppConfig.feUrl}/orders?success=Payment completed successfully via Khalti for order #${orderDetail.orderId}`
+          `${AppConfig.feUrl}/checkout/success?orderId=${orderDetail.orderId}&payment=khalti`
         );
       } else {
         // Payment was NOT completed (user canceled, failed, or pending)
-        // Keep order in its current status ('new') and do NOT record any fake transaction
+        // Keep order in its current status ('new') and do NOT record any transaction
         return res.redirect(
-          `${AppConfig.feUrl}/orders?warning=Payment was canceled or uncompleted. You can pay anytime from your orders dashboard.&orderId=${orderDetail.orderId}`
+          `${AppConfig.feUrl}/orders?warning=Khalti payment was not completed. You can retry payment anytime from your orders dashboard.&orderId=${orderDetail.orderId}`
         );
       }
     } catch (exception) {

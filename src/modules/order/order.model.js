@@ -73,6 +73,11 @@ const OrderSchema = new mongoose.Schema(
         data: { type: String },
       },
     ],
+    paymentMethod: {
+      type: String,
+      enum: ["khalti", "cod"],
+      default: "cod",
+    },
     status: {
       type: String,
       enum: ["cart", "new", "processing", "cancelled", "delivered"],

@@ -220,14 +220,19 @@ class productController {
         }
       }
 
-      // Brand filter (support ID or slug)
+      // Brand filter (support ID, slug, or name)
       if (req.query.brand && req.query.brand !== "all") {
         if (mongoose.Types.ObjectId.isValid(req.query.brand)) {
           filter.brand = {
             $in: [new mongoose.Types.ObjectId(req.query.brand)],
           };
         } else {
-          const brandDoc = await BrandModel.findOne({ slug: req.query.brand });
+          const brandDoc = await BrandModel.findOne({
+            $or: [
+              { slug: req.query.brand.toLowerCase() },
+              { name: new RegExp(`^${req.query.brand}$`, "i") },
+            ],
+          });
           if (brandDoc) {
             filter.brand = { $in: [brandDoc._id] };
           }

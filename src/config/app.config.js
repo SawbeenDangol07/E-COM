@@ -29,15 +29,15 @@ const SMTPConfig = {
 };
 
 const AppConfig = {
-  environment: process.env.ENVIRONMENT || process.env.ENVIROMENT || "production",
-  feUrl: process.env.FRONTEND_URL || "http://localhost:5173",
-  beUrl: process.env.APP_URL || "https://e-com-backend-t6pw.onrender.com",
-  jwtSecret: process.env.JWT_SECRET,
+  environment: (process.env.ENVIRONMENT || process.env.ENVIROMENT || "development").trim(),
+  feUrl: (process.env.FRONTEND_URL || "http://localhost:5173").trim(),
+  beUrl: (process.env.APP_URL || "http://localhost:9005").trim(),
+  jwtSecret: (process.env.JWT_SECRET || "").trim(),
 };
 
 const KhaltiConfig = {
-  url: process.env.KHALTI_URL,
-  key: process.env.KHALTI_API_KEY,
+  url: (process.env.KHALTI_URL || "https://dev.khalti.com/api/v2/").trim(),
+  key: (process.env.KHALTI_API_KEY || "").trim(),
 };
 
 module.exports = {

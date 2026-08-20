@@ -22,6 +22,9 @@ BrandRouter.put(
 );
 
 BrandRouter.get("/", BrandCtrl.listAll);
+BrandRouter.get("/for-home", BrandCtrl.listAll);
+BrandRouter.get("/slug/:slug", BrandCtrl.getDetailBySlug);
+BrandRouter.get("/:slug/detail", BrandCtrl.getDetailBySlug);
 
 BrandRouter.get("/:brandId", checkLogin(), BrandCtrl.getDetail);
 
