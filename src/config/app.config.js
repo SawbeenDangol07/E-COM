@@ -30,13 +30,13 @@ const SMTPConfig = {
 
 const AppConfig = {
   environment: (process.env.ENVIRONMENT || process.env.ENVIROMENT || "development").trim(),
-  feUrl: (process.env.FRONTEND_URL || "http://localhost:5173").trim(),
-  beUrl: (process.env.APP_URL || "http://localhost:9005").trim(),
+  feUrl: (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/+$/, ""),
+  beUrl: (process.env.APP_URL || "http://localhost:9005").trim().replace(/\/+$/, ""),
   jwtSecret: (process.env.JWT_SECRET || "").trim(),
 };
 
 const KhaltiConfig = {
-  url: (process.env.KHALTI_URL || "https://dev.khalti.com/api/v2/").trim(),
+  url: (process.env.KHALTI_URL || "https://dev.khalti.com/api/v2/").trim().replace(/\/+$/, "") + "/",
   key: (process.env.KHALTI_API_KEY || "").trim(),
 };
 
