@@ -30,6 +30,9 @@ app.use(limit);
 app.use(express.urlencoded({ limit: "2mb" }));
 app.use(express.json({ limit: "2mb" }));
 
+const healthRouter = require("../modules/health/health.router");
+
+app.use("/health", healthRouter);
 app.use("/api/v1", router);
 
 app.use((req, res, next) => {
